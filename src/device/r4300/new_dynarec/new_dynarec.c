@@ -8781,7 +8781,7 @@ int new_recompile_block(int addr)
     source = (u_int *)((uintptr_t)g_dev.sp.mem+start-0xa4000000);
     pagelimit = 0xa4001000;
   }
-  else if ((int)addr >= 0x80000000 && (int)addr < 0x80800000) {
+  else if ((int)addr >= 0x80000000 && (int)addr < (0x80000000 + RDRAM_MAX_SIZE)) {
     source = (u_int *)((uintptr_t)g_dev.rdram.dram+start-(uintptr_t)0x80000000);
     pagelimit = 0x80800000;
   }
