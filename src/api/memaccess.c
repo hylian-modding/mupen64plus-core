@@ -4,6 +4,7 @@
 
 #include "device/memory/memory.h"
 #include "main/main.h"
+#include "api/fixups.h"
 
 #ifdef WIN32
 #define bswap32(x) ((uint32_t)_byteswap_ulong(x))
@@ -15,7 +16,7 @@
 
 static inline uint32_t RDRAMAddrAlign(uint32_t addr)
 {
-	return (addr & 0x0fffffff) >> 2;
+	return (addr & VADDR_MASK) >> 2;
 }
 
 static inline uint32_t ROMAddrAlign(uint32_t addr)

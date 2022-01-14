@@ -57,6 +57,7 @@
     <ClCompile Include="..\..\src\api\debugger.c" />
     <ClCompile Include="..\..\src\api\frontend.c" />
     <ClCompile Include="..\..\src\api\vidext.c" />
+    <ClCompile Include="..\..\src\api\memaccess.c" />
     <ClCompile Include="..\..\src\backends\api\video_capture_backend.c" />
     <ClCompile Include="..\..\src\backends\plugins_compat\input_plugin_compat.c" />
     <ClCompile Include="..\..\src\backends\plugins_compat\audio_plugin_compat.c" />
@@ -1089,12 +1090,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\src;..\..\subprojects\md5;..\..\subprojects\minizip;..\..\subprojects\oglft;..\..\subprojects\xxhash;$(vcpkg_x86)\include\SDL2;$(vcpkg_x86)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;DYNAREC;M64P_PARALLEL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;DYNAREC;M64P_PARALLEL;__x86__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shell32.lib;opengl32.lib;glu32.lib;SDL2.lib;zlib.lib;libpng16.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -1118,6 +1120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalLibraryDirectories>$(vcpkg_x64)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <AdditionalDependencies>shell32.lib;opengl32.lib;glu32.lib;SDL2.lib;zlib.lib;libpng16.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
