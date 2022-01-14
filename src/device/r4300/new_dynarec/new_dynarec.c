@@ -652,7 +652,7 @@ static void unneeded_registers(int istart,int iend,int r)
         {
           uu=u=0x300C0F3; // Discard at, a0-a3, t6-t9
         }
-        if(start>0x80000400&&start<0x80800000) {
+        if(start>0x80000400&&start<MAX_VADDR) {
           if(itype[i]==UJUMP&&rt1[i]==31)
           {
             //uu=u=0x30300FF0FLL; // Discard at, v0-v1, t0-t9, lo, hi
@@ -2340,7 +2340,7 @@ u_int verify_dirty(struct ll_entry * head)
   void *source;
   if((int)head->start>=0xa4000000&&(int)head->start<0xa4001000) {
     source=(void *)((uintptr_t)g_dev.sp.mem+head->start-0xa4000000);
-  }else if((int)head->start>=0x80000000&&(int)head->start<0x80800000) {
+  }else if((int)head->start>=0x80000000&&(int)head->start<MAX_VADDR) {
     source=(void *)((uintptr_t)g_dev.rdram.dram+head->start-(uintptr_t)0x80000000);
   }
   else if((signed int)head->start>=(signed int)0xC0000000) {
@@ -2823,7 +2823,7 @@ void invalidate_block(u_int block)
   u_int start,end;
 
   while(head!=NULL) {
-    if((signed int)head->vaddr>=0x80000000&&(signed int)head->vaddr<0x80800000) {
+    if((signed int)head->vaddr>=0x80000000&&(signed int)head->vaddr<MAX_VADDR) {
       assert(page<2048);
       start=(head->start^0x80000000)>>12;
       end=((head->start+head->length-1)^0x80000000)>>12;
@@ -2837,7 +2837,7 @@ void invalidate_block(u_int block)
       end=(paddr+((head->start+head->length)-head->vaddr)-1)>>12;
       assert(start<2048&&end<2048);
     }
-    else if((signed int)head->vaddr>=(signed int)0x80800000) {
+    else if((signed int)head->vaddr>=(signed int)MAX_VADDR) {
       assert(page>=2048);
       start=(head->start^0x80000000)>>12;
       end=((head->start+head->length-1)^0x80000000)>>12;
@@ -2958,7 +2958,7 @@ void clean_blocks(u_int page)
           u_int i,j;
           u_int inv=0;
           u_int start,end;
-          if((signed int)head->vaddr>=0x80000000&&(signed int)head->vaddr<0x80800000) {
+          if((signed int)head->vaddr>=0x80000000&&(signed int)head->vaddr<MAX_VADDR) {
             start=head->start>>12;
             end=(head->start+head->length-1)>>12;
             for(i=start;i<=end;i++) {
@@ -2976,7 +2976,7 @@ void clean_blocks(u_int page)
               inv|=g_dev.r4300.cached_interp.invalid_code[j];
             }
           }
-          else if((signed int)head->vaddr>=(signed int)0x80800000) {
+          else if((signed int)head->vaddr>=(signed int)MAX_VADDR) {
             //TODO: allow restoring?
             inv=1;
           }
@@ -4323,7 +4323,7 @@ static void address_generation(int i,struct regstat *i_regs,signed char entry[])
               // Stores to memory go thru the mapper to detect self-modifying
               // code, loads don't.
               if((unsigned int)(constmap[i][rs]+offset)>=0xC0000000 ||
-                 (unsigned int)(constmap[i][rs]+offset)<0x80800000 )
+                 (unsigned int)(constmap[i][rs]+offset)<MAX_VADDR )
                 generate_map_const(constmap[i][rs]+offset,rm);
             }else{
               if((signed int)(constmap[i][rs]+offset)>=(signed int)0xC0000000)
@@ -4355,7 +4355,7 @@ static void address_generation(int i,struct regstat *i_regs,signed char entry[])
           // on arm address generation is always required
           // When LB/LBU/LH/LHU/LW/LWU/LD/LWC1/LDC1 loading from rdram, add rdram address to load address to avoid loading ROREG
           // ROREG only required for SDL/SDR/SB/SH/SW/SD/SWC1/SDC1 and when not loading from rdram
-          if(load&&(signed int)constmap[i][rs]+offset<(signed int)0x80800000)
+          if(load&&(signed int)constmap[i][rs]+offset<(signed int)MAX_VADDR)
             emit_movimm(constmap[i][rs]+offset+(intptr_t)g_dev.rdram.dram-(intptr_t)0x80000000,ra);
           else
           #endif
@@ -4391,7 +4391,7 @@ static void address_generation(int i,struct regstat *i_regs,signed char entry[])
           // Stores to memory go thru the mapper to detect self-modifying
           // code, loads don't.
           if((unsigned int)(constmap[i+1][rs]+offset)>=0xC0000000 ||
-             (unsigned int)(constmap[i+1][rs]+offset)<0x80800000 )
+             (unsigned int)(constmap[i+1][rs]+offset)<MAX_VADDR )
             generate_map_const(constmap[i+1][rs]+offset,ra);
         }else{
           if((signed int)(constmap[i+1][rs]+offset)>=(signed int)0xC0000000)
@@ -4426,7 +4426,7 @@ static void address_generation(int i,struct regstat *i_regs,signed char entry[])
         if(!load||(using_tlb&&((signed int)constmap[i+1][rs]+offset)>=(signed int)0xC0000000))
         #endif
         #if defined(RAM_OFFSET) && !defined(NATIVE_64)
-        if(load&&(signed int)constmap[i+1][rs]+offset<(signed int)0x80800000)
+        if(load&&(signed int)constmap[i+1][rs]+offset<(signed int)MAX_VADDR)
           emit_movimm(constmap[i+1][rs]+offset+(intptr_t)g_dev.rdram.dram-(intptr_t)0x80000000,ra);
         else
         #endif
@@ -6119,7 +6119,7 @@ static void load_assemble(int i,struct regstat *i_regs)
   if(i_regs->regmap[HOST_CCREG]==CCREG) reglist&=~(1<<HOST_CCREG);
   if(s>=0) {
     c=(i_regs->wasconst>>s)&1;
-    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)0x80800000;
+    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)MAX_VADDR;
     if(c&&using_tlb&&((signed int)(constmap[i][s]+offset))>=(signed int)0xC0000000) memtarget=1;
   }
 
@@ -6148,7 +6148,7 @@ static void load_assemble(int i,struct regstat *i_regs)
 //#define R29_HACK 1
       #ifdef R29_HACK
       // Strmnnrmn's speed hack
-      if(rs1[i]!=29||start<0x80001000||start>=0x80800000)
+      if(rs1[i]!=29||start<0x80001000||start>=MAX_VADDR)
       #endif
       {
         emit_cmpimm(addr,0x800000);
@@ -6298,7 +6298,7 @@ static void store_assemble(int i,struct regstat *i_regs)
   offset=imm[i];
   if(s>=0) {
     c=(i_regs->wasconst>>s)&1;
-    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)0x80800000;
+    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)MAX_VADDR;
     if(c&&using_tlb&&((signed int)(constmap[i][s]+offset))>=(signed int)0xC0000000) memtarget=1;
   }
   assert(tl>=0);
@@ -6324,11 +6324,11 @@ static void store_assemble(int i,struct regstat *i_regs)
       #ifdef R29_HACK
       // Strmnnrmn's speed hack
       memtarget=1;
-      if(rs1[i]!=29||start<0x80001000||start>=0x80800000)
+      if(rs1[i]!=29||start<0x80001000||start>=MAX_VADDR)
       #endif
       emit_cmpimm(addr,0x800000);
       #ifdef R29_HACK
-      if(rs1[i]!=29||start<0x80001000||start>=0x80800000)
+      if(rs1[i]!=29||start<0x80001000||start>=MAX_VADDR)
       #endif
       {
         jaddr=(intptr_t)out;
@@ -6435,7 +6435,7 @@ static void storelr_assemble(int i,struct regstat *i_regs)
   offset=imm[i];
   if(s>=0) {
     c=(i_regs->isconst>>s)&1;
-    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)0x80800000;
+    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)MAX_VADDR;
     if(c&&using_tlb&&((signed int)(constmap[i][s]+offset))>=(signed int)0xC0000000) memtarget=1;
   }
   assert(tl>=0);
@@ -6733,7 +6733,7 @@ static void c1ls_assemble(int i,struct regstat *i_regs)
 
   if(s>=0) {
     c=(i_regs->wasconst>>s)&1;
-    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)0x80800000;
+    memtarget=c&&((signed int)(constmap[i][s]+offset))<(signed int)MAX_VADDR;
     if(c&&using_tlb&&((signed int)(constmap[i][s]+offset))>=(signed int)0xC0000000) memtarget=1;
   }
   if(offset||s<0||c) addr=ar;
@@ -8781,9 +8781,9 @@ int new_recompile_block(int addr)
     source = (u_int *)((uintptr_t)g_dev.sp.mem+start-0xa4000000);
     pagelimit = 0xa4001000;
   }
-  else if ((int)addr >= 0x80000000 && (int)addr < (0x80000000 + RDRAM_MAX_SIZE)) {
+  else if ((int)addr >= 0x80000000 && (int)addr < MAX_VADDR) {
     source = (u_int *)((uintptr_t)g_dev.rdram.dram+start-(uintptr_t)0x80000000);
-    pagelimit = 0x80000000 + RDRAM_MAX_SIZE;
+    pagelimit = MAX_VADDR;
   }
   else if ((signed int)addr >= (signed int)0xC0000000) {
     //DebugMessage(M64MSG_VERBOSE, "addr=%x mm=%x",(u_int)addr,(g_dev.r4300.new_dynarec_hot_state.memory_map[start>>12]<<2));
