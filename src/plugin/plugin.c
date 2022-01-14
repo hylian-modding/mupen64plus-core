@@ -69,6 +69,8 @@ static const gfx_plugin_functions dummy_gfx = {
     dummyvideo_ReadScreen2,
     dummyvideo_SetRenderingCallback,
     dummyvideo_ResizeVideoOutput,
+    dummyvideo_AddHiresTexturePath,
+    dummyvideo_RemoveHiresTexturePath,
     dummyvideo_FBRead,
     dummyvideo_FBWrite,
     dummyvideo_FBGetFrameBufferInfo

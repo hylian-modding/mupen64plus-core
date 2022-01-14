@@ -420,9 +420,6 @@
     <ClCompile Include="..\..\src\device\r4300\new_dynarec\arm64\assem_arm64.c">
       <Filter>device\r4300\new_dynarec\arm64</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\api\memaccess.c">
-      <Filter>api</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\callbacks.h">
