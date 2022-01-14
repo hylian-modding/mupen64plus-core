@@ -238,25 +238,6 @@ static m64p_error plugin_connect_gfx(m64p_dynlib_handle plugin_handle)
     return M64ERR_SUCCESS;
 }
 
-EXPORT m64p_error CALL ExtResetInputPlugin(void)
-{
-    input.romClosed();
-    if (input.romOpen() != M64ERR_SUCCESS)
-        return M64ERR_SYSTEM_FAIL;
-    return plugin_start_input();
-}
-
-EXPORT void CALL VidExt_AddHiresTexturePath(char* path) {
-    if (gfx.AddHiresTexturePath == 0) {
-        return;
-    }
-    gfx.AddHiresTexturePath(path);
-}
-
-EXPORT void CALL VidExt_RemoveHiresTexturePath(char* path) {
-    gfx.RemoveHiresTexturePath(path);
-}
-
 static m64p_error plugin_start_gfx(void)
 {
     uint8_t media = *((uint8_t*)mem_base_u32(g_mem_base, MM_CART_ROM) + (0x3b ^ S8));
@@ -605,3 +586,23 @@ m64p_error plugin_check(void)
     return M64ERR_SUCCESS;
 }
 
+EXPORT m64p_error CALL ExtResetInputPlugin(void)
+{
+    input.romClosed();
+
+    if (input.romOpen() != M64ERR_SUCCESS)
+        return M64ERR_SYSTEM_FAIL;
+
+    return plugin_start_input();
+}
+
+EXPORT void CALL VidExt_AddHiresTexturePath(char* path) {
+    if (gfx.AddHiresTexturePath == 0) {
+        return;
+    }
+    gfx.AddHiresTexturePath(path);
+}
+
+EXPORT void CALL VidExt_RemoveHiresTexturePath(char* path) {
+    gfx.RemoveHiresTexturePath(path);
+}
