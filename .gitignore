@@ -3,5 +3,7 @@
 /projects/msvc/x64
 /projects/msvc/Win32
 /projects/msvc/*.user
+/src/asm_defines/asm_defines_gas.h
+/src/asm_defines/asm_defines_nasm.h
 .vs
 .vscode
