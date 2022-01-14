@@ -151,8 +151,7 @@ extern ExtIntCallback g_event_cb;
 
 void NotifyEvent(enum ExtCoreEvent e) {
     if (g_event_cb)
-        g_eve
-        nt_cb(e);
+        g_event_cb(e);
 }
 
 void NotifyEventWData(enum ExtCoreEvent e, uint8_t data) {
