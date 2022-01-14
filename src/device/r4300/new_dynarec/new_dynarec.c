@@ -2473,7 +2473,7 @@ static void add_link(u_int vaddr,void *src)
 {
   u_int page=(vaddr^0x80000000)>>12;
   if(page>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) page=(g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]^0x80000000)>>12;
-  if(page>4095) page=2048+(page&2047);
+  if(page>(MAX_PAGE + MAX_PAGE - 1)) page=MAX_PAGE+(page&(MAX_PAGE-1));
   inv_debug("add_link: %x -> %x (%d)\n",(intptr_t)src,vaddr,page);
   (void)ll_add(jump_out+page,vaddr,src,src,0,NULL,0);
   //int ptr=get_pointer(src);
@@ -2484,7 +2484,7 @@ static struct ll_entry *get_clean(struct r4300_core* r4300,u_int vaddr,u_int fla
 {
   u_int page=(vaddr^0x80000000)>>12;
   if(page>262143&&r4300->cp0.tlb.LUT_r[vaddr>>12]) page=(r4300->cp0.tlb.LUT_r[vaddr>>12]^0x80000000)>>12;
-  if(page>2048) page=2048+(page&2047);
+  if(page>MAX_PAGE) page=MAX_PAGE+(page&(MAX_PAGE-1));
   struct ll_entry *head;
   head=jump_in[page];
   while(head!=NULL) {
@@ -2501,9 +2501,9 @@ static struct ll_entry *get_dirty(struct r4300_core* r4300,u_int vaddr,u_int fla
   u_int page=(vaddr^0x80000000)>>12;
   u_int vpage=page;
   if(page>262143&&r4300->cp0.tlb.LUT_r[vaddr>>12]) page=(r4300->cp0.tlb.LUT_r[vaddr>>12]^0x80000000)>>12;
-  if(page>2048) page=2048+(page&2047);
-  if(vpage>262143&&r4300->cp0.tlb.LUT_r[vaddr>>12]) vpage&=2047; // jump_dirty uses a hash of the virtual address instead
-  if(vpage>2048) vpage=2048+(vpage&2047);
+  if(page>MAX_PAGE) page=MAX_PAGE+(page&(MAX_PAGE-1));
+  if(vpage>262143&&r4300->cp0.tlb.LUT_r[vaddr>>12]) vpage&=(MAX_PAGE-1); // jump_dirty uses a hash of the virtual address instead
+  if(vpage>MAX_PAGE) vpage=MAX_PAGE+(vpage&(MAX_PAGE-1));
   struct ll_entry *head;
   head=jump_dirty[vpage];
   while(head!=NULL) {
@@ -2513,7 +2513,7 @@ static struct ll_entry *get_dirty(struct r4300_core* r4300,u_int vaddr,u_int fla
         if(verify_dirty(head)==0) {
           r4300->cached_interp.invalid_code[vaddr>>12]=0;
           r4300->new_dynarec_hot_state.memory_map[vaddr>>12]|=WRITE_PROTECT;
-          if(vpage<2048) {
+          if(vpage<MAX_PAGE) {
             if(r4300->cp0.tlb.LUT_r[vaddr>>12]) {
               r4300->cached_interp.invalid_code[r4300->cp0.tlb.LUT_r[vaddr>>12]>>12]=0;
               r4300->new_dynarec_hot_state.memory_map[r4300->cp0.tlb.LUT_r[vaddr>>12]>>12]|=WRITE_PROTECT;
@@ -2815,7 +2815,7 @@ void invalidate_block(u_int block)
   u_int page;
   page=block^0x80000;
   if(page>262143&&g_dev.r4300.cp0.tlb.LUT_r[block]) page=(g_dev.r4300.cp0.tlb.LUT_r[block]^0x80000000)>>12;
-  if(page>2048) page=2048+(page&2047);
+  if(page>MAX_PAGE) page=MAX_PAGE+(page&(MAX_PAGE-1));
   inv_debug("INVALIDATE: %x (%d)\n",block<<12,page);
   u_int first,last;
   first=last=page;
@@ -2825,26 +2825,26 @@ void invalidate_block(u_int block)
 
   while(head!=NULL) {
     if((signed int)head->vaddr>=0x80000000&&(signed int)head->vaddr<MAX_VADDR) {
-      assert(page<2048);
+      assert(page<MAX_PAGE);
       start=(head->start^0x80000000)>>12;
       end=((head->start+head->length-1)^0x80000000)>>12;
-      assert(start<2048&&end<2048);
+      assert(start<MAX_PAGE&&end<MAX_PAGE);
     }
     if((signed int)head->vaddr>=(signed int)0xC0000000) {
-      assert(page<2048);
+      assert(page<MAX_PAGE);
       assert(g_dev.r4300.new_dynarec_hot_state.memory_map[head->vaddr>>12]!=(uintptr_t)-1);
       u_int paddr=head->vaddr+(g_dev.r4300.new_dynarec_hot_state.memory_map[head->vaddr>>12]<<2)-(uintptr_t)g_dev.rdram.dram;
       start=(paddr-(head->vaddr-head->start))>>12;
       end=(paddr+((head->start+head->length)-head->vaddr)-1)>>12;
-      assert(start<2048&&end<2048);
+      assert(start<MAX_PAGE&&end<MAX_PAGE);
     }
     else if((signed int)head->vaddr>=(signed int)MAX_VADDR) {
-      assert(page>=2048);
+      assert(page>=MAX_PAGE);
       start=(head->start^0x80000000)>>12;
       end=((head->start+head->length-1)^0x80000000)>>12;
-      assert(start>=2048&&end>=2048);
-      start=2048+(start&2047);
-      end=2048+(end&2047);
+      assert(start>=MAX_PAGE&&end>=MAX_PAGE);
+      start=MAX_PAGE+(start&(MAX_PAGE-1));
+      end=MAX_PAGE+(end&(MAX_PAGE-1));
     }
 
     if((start<=page)&&(end>=page)) {
@@ -2895,8 +2895,8 @@ static void invalidate_all_pages(void)
   for(page=0;page<1048576;page++)
   {
     if(!g_dev.r4300.cached_interp.invalid_code[page]) {
-      restore_candidate[(page&2047)>>3]|=1<<(page&7);
-      restore_candidate[((page&2047)>>3)+256]|=1<<(page&7);
+      restore_candidate[(page&(MAX_PAGE-1))>>3]|=1<<(page&7);
+      restore_candidate[((page&(MAX_PAGE-1))>>3)+256]|=1<<(page&7);
     }
   }
   #if NEW_DYNAREC >= NEW_DYNAREC_ARM
@@ -2984,7 +2984,7 @@ void clean_blocks(u_int page)
           if(!inv) {
             if((((uintptr_t)head->clean_addr-(uintptr_t)out)<<(32-TARGET_SIZE_2))>0x60000000+(MAX_OUTPUT_BLOCK_SIZE<<(32-TARGET_SIZE_2))) {
               u_int ppage=page;
-              if(page<2048&&g_dev.r4300.cp0.tlb.LUT_r[head->vaddr>>12]) ppage=(g_dev.r4300.cp0.tlb.LUT_r[head->vaddr>>12]^0x80000000)>>12;
+              if(page<MAX_PAGE&&g_dev.r4300.cp0.tlb.LUT_r[head->vaddr>>12]) ppage=(g_dev.r4300.cp0.tlb.LUT_r[head->vaddr>>12]^0x80000000)>>12;
               inv_debug("INV: Restored %x (%x/%x)\n",head->vaddr, (intptr_t)head->addr, (intptr_t)head->clean_addr);
               //DebugMessage(M64MSG_VERBOSE, "page=%x, addr=%x",page,head->vaddr);
               //assert(head->vaddr>>12==(page|0x80000));
@@ -8521,9 +8521,9 @@ static void pagespan_ds(void)
   u_int page=(0x80000000^vaddr)>>12;
   u_int vpage=page;
   if(page>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) page=(g_dev.r4300.cp0.tlb.LUT_r[page^0x80000]^0x80000000)>>12;
-  if(page>2048) page=2048+(page&2047);
-  if(vpage>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) vpage&=2047; // jump_dirty uses a hash of the virtual address instead
-  if(vpage>2048) vpage=2048+(vpage&2047);
+  if(page>MAX_PAGE) page=MAX_PAGE+(page&(MAX_PAGE-1));
+  if(vpage>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) vpage&=MAX_PAGE-1; // jump_dirty uses a hash of the virtual address instead
+  if(vpage>MAX_PAGE) vpage=MAX_PAGE+(vpage&(MAX_PAGE-1));
   struct ll_entry *head=ll_add(jump_dirty+vpage,vaddr,(void *)out,NULL,start,copy,slen*4);
   dirty_entry_count++;
   do_dirty_stub_ds(head);
@@ -11754,9 +11754,9 @@ int new_recompile_block(int addr)
         u_int page=(0x80000000^vaddr)>>12;
         u_int vpage=page;
         if(page>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) page=(g_dev.r4300.cp0.tlb.LUT_r[page^0x80000]^0x80000000)>>12;
-        if(page>2048) page=2048+(page&2047);
-        if(vpage>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) vpage&=2047; // jump_dirty uses a hash of the virtual address instead
-        if(vpage>2048) vpage=2048+(vpage&2047);
+        if(page>MAX_PAGE) page=MAX_PAGE+(page&(MAX_PAGE-1));
+        if(vpage>262143&&g_dev.r4300.cp0.tlb.LUT_r[vaddr>>12]) vpage&=MAX_PAGE-1; // jump_dirty uses a hash of the virtual address instead
+        if(vpage>MAX_PAGE) vpage=MAX_PAGE+(vpage&(MAX_PAGE-1));
         literal_pool(256);
         //if(!(is32[i]&(~unneeded_reg_upper[i])&~(1LL<<CCREG)))
         if(!requires_32bit[i])
@@ -11850,20 +11850,20 @@ int new_recompile_block(int addr)
     {
       case 0:
         // Clear jump_in and jump_dirty
-        ll_remove_matching_addrs(jump_in+(expirep&2047),base,shift);
-        ll_remove_matching_addrs(jump_dirty+(expirep&2047),base,shift);
-        ll_remove_matching_addrs(jump_in+2048+(expirep&2047),base,shift);
-        ll_remove_matching_addrs(jump_dirty+2048+(expirep&2047),base,shift);
+        ll_remove_matching_addrs(jump_in+(expirep&(MAX_PAGE-1)),base,shift);
+        ll_remove_matching_addrs(jump_dirty+(expirep&(MAX_PAGE-1)),base,shift);
+        ll_remove_matching_addrs(jump_in+MAX_PAGE+(expirep&(MAX_PAGE-1)),base,shift);
+        ll_remove_matching_addrs(jump_dirty+MAX_PAGE+(expirep&(MAX_PAGE-1)),base,shift);
         break;
       case 1:
         // Clear pointers
-        ll_kill_pointers(jump_out[expirep&2047],base,shift);
-        ll_kill_pointers(jump_out[(expirep&2047)+2048],base,shift);
+        ll_kill_pointers(jump_out[expirep&(MAX_PAGE-1)],base,shift);
+        ll_kill_pointers(jump_out[(expirep&(MAX_PAGE-1))+MAX_PAGE],base,shift);
         break;
       case 2:
         // Clear hash table
         for(i=0;i<32;i++) {
-          struct ll_entry **ht_bin=hash_table[((expirep&2047)<<5)+i];
+          struct ll_entry **ht_bin=hash_table[((expirep&(MAX_PAGE-1))<<5)+i];
           if(ht_bin[1]&&((((uintptr_t)ht_bin[1]->addr-(uintptr_t)base_addr)>>shift)==((base-(uintptr_t)base_addr)>>shift) ||
              (((uintptr_t)ht_bin[1]->addr-(uintptr_t)base_addr-MAX_OUTPUT_BLOCK_SIZE)>>shift)==((base-(uintptr_t)base_addr)>>shift))) {
             inv_debug("EXP: Remove hash %x -> %x\n",ht_bin[1]->vaddr,ht_bin[1]->addr);
@@ -11880,11 +11880,11 @@ int new_recompile_block(int addr)
       case 3:
         // Clear jump_out
         #if NEW_DYNAREC >= NEW_DYNAREC_ARM
-        if((expirep&2047)==0)
+        if((expirep&(MAX_PAGE-1))==0)
           do_clear_cache();
         #endif
-        ll_remove_matching_addrs(jump_out+(expirep&2047),base,shift);
-        ll_remove_matching_addrs(jump_out+2048+(expirep&2047),base,shift);
+        ll_remove_matching_addrs(jump_out+(expirep&(MAX_PAGE-1)),base,shift);
+        ll_remove_matching_addrs(jump_out+MAX_PAGE+(expirep&(MAX_PAGE-1)),base,shift);
         break;
     }
     expirep=(expirep+1)&65535;

@@ -30,7 +30,11 @@
 
 enum {
     RDRAM_8MB_SIZE = 0x00800000,
+#ifdef NOT_MODLOADER
+    RDRAM_MAX_SIZE = 0x00800000,
+#else
     RDRAM_MAX_SIZE = 0x03E00000
+#endif
 };
 
 enum { CART_ROM_MAX_SIZE = 0x4000000 };
