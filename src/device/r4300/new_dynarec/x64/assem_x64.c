@@ -18,6 +18,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.          *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include "api/fixups.h"
+
 void jump_vaddr_eax(void);
 void jump_vaddr_ecx(void);
 void jump_vaddr_edx(void);
@@ -852,7 +854,7 @@ static void emit_leairrx4(int imm,int rs1,int rs2,int rt)
 
 static void emit_lea_rip(intptr_t addr, int hr)
 {
-  assert(addr-(intptr_t)out>=-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+  assert(addr-(intptr_t)out>=-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
   if(addr==(intptr_t)&g_dev.r4300.new_dynarec_hot_state.memory_map)
       assem_debug("lea %llx,%%%s%s",addr,regname[hr]," [memory_map]");
   if(addr==(intptr_t)&g_dev.r4300.cached_interp.invalid_code)
@@ -913,7 +915,7 @@ static void emit_loadreg(int r, int hr)
   else if(r==ROREG)
   {
     intptr_t addr=(intptr_t)&g_dev.r4300.new_dynarec_hot_state.ram_offset;
-    assert(addr-(intptr_t)out>=-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+    assert(addr-(intptr_t)out>=-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
     assem_debug("mov (%llx),%%%s [ram_offset]",addr,regname[hr]);
     output_rex(1,hr>>3,0,0); // 64-bit load
     output_byte(0x8B);
@@ -928,7 +930,7 @@ static void emit_loadreg(int r, int hr)
     if(r==CCREG) addr=(intptr_t)&g_dev.r4300.new_dynarec_hot_state.cycle_count;
     if(r==CSREG) addr=(intptr_t)&g_dev.r4300.new_dynarec_hot_state.cp0_regs[CP0_STATUS_REG];
     if(r==FSREG) addr=(intptr_t)&g_dev.r4300.new_dynarec_hot_state.fcr31;
-    assert(addr-(intptr_t)out>=-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+    assert(addr-(intptr_t)out>=-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
     assem_debug("mov %llx+%d,%%%s",addr,r,regname[hr]);
     if(hr>=8) output_rex(0,hr>>3,0,0);
     output_byte(0x8B);
@@ -946,7 +948,7 @@ static void emit_storereg(int r, int hr)
   assert((r&63)!=CSREG);
   assert((r&63)!=0);
   assert((r&63)<=CCREG);
-  assert(addr-(intptr_t)out>=-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+  assert(addr-(intptr_t)out>=-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("mov %%%s,%llx+%d",regname[hr],addr,r);
   if(hr>=8) output_rex(0,hr>>3,0,0);
   output_byte(0x89);
@@ -1542,7 +1544,7 @@ static void emit_cmpimm(int rs,int imm)
 
 static void emit_cmovne(const u_int *addr,int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("cmovne %llx,%%%s",(intptr_t)addr,regname[rt]);
   if(addr==&const_zero) assem_debug(" [zero]");
   else if(addr==&const_one) assem_debug(" [one]");
@@ -1554,7 +1556,7 @@ static void emit_cmovne(const u_int *addr,int rt)
 }
 static void emit_cmovl(const u_int *addr,int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("cmovl %llx,%%%s",(intptr_t)addr,regname[rt]);
   if(addr==&const_zero) assem_debug(" [zero]");
   else if(addr==&const_one) assem_debug(" [one]");
@@ -1566,7 +1568,7 @@ static void emit_cmovl(const u_int *addr,int rt)
 }
 static void emit_cmovs(const u_int *addr,int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("cmovs %llx,%%%s",(intptr_t)addr,regname[rt]);
   if(addr==&const_zero) assem_debug(" [zero]");
   else if(addr==&const_one) assem_debug(" [one]");
@@ -1908,7 +1910,7 @@ static void emit_jmpmem_indexed(u_int addr,u_int r)
 static void emit_addmem64(intptr_t addr,int hr)
 {
   assert(0);
-  assert(addr-(intptr_t)out>-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+  assert(addr-(intptr_t)out>-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
   if(addr==(intptr_t)&g_dev.r4300.new_dynarec_hot_state.ram_offset) assem_debug("add (%llx),%%%s [ram_offset]",addr,regname[hr]);
   //else if(addr==(intptr_t)&rounding_modes_ptr) assem_debug("add (%x),%%%s [rounding_modes]",addr,regname[hr]);
   else assem_debug("add (%llx),%%%s",addr,regname[hr]);
@@ -1921,7 +1923,7 @@ static void emit_addmem64(intptr_t addr,int hr)
 static void emit_submem64(intptr_t addr,int hr)
 {
   assert(0);
-  assert(addr-(intptr_t)out>-2147483648LL&&addr-(intptr_t)out<2147483647LL);
+  assert(addr-(intptr_t)out>-(VADDR_MASK)&&addr-(intptr_t)out<(VADDR_MASK - 1));
   if(addr==(intptr_t)&g_dev.r4300.new_dynarec_hot_state.ram_offset) assem_debug("sub (%llx),%%%s [ram_offset]",addr,regname[hr]);
   else assem_debug("sub (%llx),%%%s",addr,regname[hr]);
   output_rex(1,hr>>3,0,0); // 64-bit load
@@ -1932,7 +1934,7 @@ static void emit_submem64(intptr_t addr,int hr)
 
 static void emit_readword(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("mov %llx,%%%s",addr,regname[rt]);
   output_byte(0x8B);
   output_modrm(0,5,rt);
@@ -2047,7 +2049,7 @@ static void emit_movmem64_irrx8(int offset, int rs1, int rs2, int rt)
 }
 static void emit_movmem64(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movq %llx,%%%s",addr,regname[rt]);
   output_rex(1,rt>>3,0,0);
   output_byte(0x8B);
@@ -2081,7 +2083,7 @@ static void emit_readdword_indexed_tlb(int addr, int rs, int map, int rh, int rl
 }
 static void emit_movsbl(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movsbl %llx,%%%s",addr,regname[rt]);
   output_byte(0x0F);
   output_byte(0xBE);
@@ -2131,7 +2133,7 @@ static void emit_movsbl_indexed_tlb(int addr, int rs, int map, int rt)
 }
 static void emit_movswl(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movswl %llx,%%%s",addr,regname[rt]);
   output_byte(0x0F);
   output_byte(0xBF);
@@ -2181,7 +2183,7 @@ static void emit_movswl_indexed_tlb(int addr, int rs, int map, int rt)
 }
 static void emit_movzbl(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movzbl %llx,%%%s",addr,regname[rt]);
   output_byte(0x0F);
   output_byte(0xB6);
@@ -2231,7 +2233,7 @@ static void emit_movzbl_indexed_tlb(int addr, int rs, int map, int rt)
 }
 static void emit_movzwl(intptr_t addr, int rt)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movzwl %llx,%%%s",addr,regname[rt]);
   output_byte(0x0F);
   output_byte(0xB7);
@@ -2308,7 +2310,7 @@ static void emit_xchg64(int rs, int rt)
 }
 static void emit_writeword(int rt, intptr_t addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movl %%%s,%llx",regname[rt],addr);
   output_byte(0x89);
   output_modrm(0,5,rt);
@@ -2373,7 +2375,7 @@ static void emit_writedword_indexed_tlb(int rh, int rl, int addr, int rs, int ma
 }
 static void emit_writehword(int rt, int addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movw %%%s,%llx",regname[rt]+1,addr);
   output_byte(0x66);
   output_byte(0x89);
@@ -2431,7 +2433,7 @@ static void emit_writehword_indexed_tlb(int rt, int addr, int rs, int map)
 }
 static void emit_writebyte(int rt, int addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movb %%%cl,%llx",regname[rt][1],addr);
   if(rt>=4) output_rex(0,rt>>3,0,0);
   output_byte(0x88);
@@ -2489,7 +2491,7 @@ static void emit_writebyte_indexed_tlb(int rt, int addr, int rs, int map)
 }
 static void emit_writeword_imm(int imm, intptr_t addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movl $%x,%llx",imm,addr);
   output_byte(0xC7);
   output_modrm(0,5,0);
@@ -2510,7 +2512,7 @@ static void emit_writeword_imm_esp(int imm, intptr_t addr)
 static void emit_writedword_imm32(int imm, intptr_t addr)
 {
   assert(0);
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movq $%x,%llx",imm,addr);
   output_rex(1,0,0,0);
   output_byte(0xC7);
@@ -2520,7 +2522,7 @@ static void emit_writedword_imm32(int imm, intptr_t addr)
 }
 static void emit_writebyte_imm(int imm, intptr_t addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movb $%x,%llx",imm,addr);
   assert(imm>=-128&&imm<128);
   output_byte(0xC6);
@@ -2530,7 +2532,7 @@ static void emit_writebyte_imm(int imm, intptr_t addr)
 }
 static void emit_writedword(int rt, intptr_t addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("movq %%%s,%llx",regname[rt],addr);
   output_rex(1,rt>>3,0,0);
   output_byte(0x89);
@@ -2579,7 +2581,7 @@ static void emit_mov2imm_compact(int imm1,u_int rt1,int imm2,u_int rt2)
 // special case for checking pending_exception
 static void emit_cmpmem_imm(intptr_t addr, int imm)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assert(imm<128&&imm>=-127);
   assem_debug("cmp $%d,%llx",imm,addr);
   output_byte(0x83);
@@ -2646,7 +2648,7 @@ static void emit_readdword_dualindexed(int offset, int base,int rs,int rt)
 static void emit_cmpmem(intptr_t addr,int rt)
 {
   assert(0);
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assert(rt>=0&&rt<8);
   assem_debug("cmp %llx,%%%s",addr,regname[rt]);
   output_byte(0x39);
@@ -2659,7 +2661,7 @@ static void emit_cmpmem(intptr_t addr,int rt)
 static void emit_prefetch(void *addr)
 {
   assert(0);
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("prefetch %llx",(intptr_t)addr);
   output_byte(0x0F);
   output_byte(0x18);
@@ -2884,7 +2886,7 @@ static void emit_fldcw_indexedx4(int addr, int r)
 }
 static void emit_fldcw(intptr_t addr)
 {
-  assert((intptr_t)addr-(intptr_t)out>=-2147483648LL&&(intptr_t)addr-(intptr_t)out<2147483647LL);
+  assert((intptr_t)addr-(intptr_t)out>=-(VADDR_MASK)&&(intptr_t)addr-(intptr_t)out<(VADDR_MASK - 1));
   assem_debug("fldcw %llx",addr);
   output_byte(0xd9);
   output_modrm(0,5,5);
