@@ -194,6 +194,18 @@ static m64p_error plugin_connect_gfx(m64p_dynlib_handle plugin_handle)
         /* set function pointers for optional functions */
         gfx.resizeVideoOutput = (ptr_ResizeVideoOutput)osal_dynlib_getproc(plugin_handle, "ResizeVideoOutput");
 
+        // Modloader support for frontend texture management
+        gfx.AddHiresTexturePath = (ptr_AddHiresTexturePath)osal_dynlib_getproc(plugin_handle, "AddHiresTexturePath");
+        gfx.RemoveHiresTexturePath = (ptr_RemoveHiresTexturePath)osal_dynlib_getproc(plugin_handle, "RemoveHiresTexturePath");
+
+        if (gfx.AddHiresTexturePath == 0) {
+            DebugMessage(M64MSG_ERROR, "Failed to find AddHiresTexturePath\n");
+        }
+
+        if (gfx.RemoveHiresTexturePath == 0) {
+            DebugMessage(M64MSG_ERROR, "Failed to find RemoveHiresTexturePath\n");
+        }
+
         /* check the version info */
         (*gfx.getVersion)(&PluginType, &PluginVersion, &APIVersion, NULL, NULL);
         if (PluginType != M64PLUGIN_GFX || (APIVersion & 0xffff0000) != (GFX_API_VERSION & 0xffff0000))
@@ -224,6 +236,25 @@ static m64p_error plugin_connect_gfx(m64p_dynlib_handle plugin_handle)
         plugin_disconnect_gfx();
 
     return M64ERR_SUCCESS;
+}
+
+EXPORT m64p_error CALL ExtResetInputPlugin(void)
+{
+    input.romClosed();
+    if (input.romOpen() != M64ERR_SUCCESS)
+        return M64ERR_SYSTEM_FAIL;
+    return plugin_start_input();
+}
+
+EXPORT void CALL VidExt_AddHiresTexturePath(char* path) {
+    if (gfx.AddHiresTexturePath == 0) {
+        return;
+    }
+    gfx.AddHiresTexturePath(path);
+}
+
+EXPORT void CALL VidExt_RemoveHiresTexturePath(char* path) {
+    gfx.RemoveHiresTexturePath(path);
 }
 
 static m64p_error plugin_start_gfx(void)

@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "osal/preproc.h"
+#include "api/fixups.h"
 
 struct r4300_core;
 
@@ -45,7 +46,7 @@ enum rdram_registers
 };
 
 /* IPL3 rdram initialization accepts up to 8 RDRAM modules */
-enum { RDRAM_MAX_MODULES_COUNT = 8 };
+enum { RDRAM_MAX_MODULES_COUNT = RDRAM_MAX_SIZE / 0x200000 };
 
 struct rdram
 {
@@ -64,7 +65,7 @@ static osal_inline uint32_t rdram_reg(uint32_t address)
 
 static osal_inline uint32_t rdram_dram_address(uint32_t address)
 {
-    return (address & 0xffffff) >> 2;
+    return (address & VADDR_MASK) >> 2;
 }
 
 void init_rdram(struct rdram* rdram,

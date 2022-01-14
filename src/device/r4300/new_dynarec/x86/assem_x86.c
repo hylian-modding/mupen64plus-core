@@ -1827,7 +1827,11 @@ static void emit_readdword_tlb(int addr, int map, int rh, int rl)
 {
   if(map<0) {
     if(rh>=0) emit_readword(addr+(int)g_dev.rdram.dram-0x80000000, rh);
+#ifdef NOT_MODLOADER
     emit_readword(addr+(int)g_dev.rdram.dram-0x7FFFFFFC, rl);
+#else
+    emit_readword(addr+(int)g_dev.rdram.dram-0xFFFFFFFC, rl);
+#endif
   }
   else {
     if(rh>=0) emit_movmem_indexedx4(addr, map, rh);

@@ -28,6 +28,7 @@
 #include "api/callbacks.h"
 #include "api/debugger.h"
 #include "api/m64p_types.h"
+#include "api/fixups.h"
 #include "device/memory/memory.h"
 #include "device/r4300/cached_interp.h"
 #include "device/r4300/cp0.h"
@@ -440,7 +441,7 @@ void gen_LB(struct r4300_core* r4300)
     /* else (RDRAM read), read byte */
     jump_end_rel8(r4300);
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     xor_reg8_imm8(gpr2, 3); // 4
     movsx_reg32_8preg64preg64(gpr1, gpr2, base1); // 4
 
@@ -511,7 +512,7 @@ void gen_LBU(struct r4300_core* r4300)
     /* else (RDRAM read), read byte */
     jump_end_rel8(r4300);
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     xor_reg8_imm8(gpr2, 3); // 4
     mov_reg32_preg64preg64(gpr1, gpr2, base1); // 3
 
@@ -585,7 +586,7 @@ void gen_LH(struct r4300_core* r4300)
 
     jump_end_rel8(r4300);
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     xor_reg8_imm8(gpr2, 2); // 4
     movsx_reg32_16preg64preg64(gpr1, gpr2, base1); // 4
 
@@ -655,7 +656,7 @@ void gen_LHU(struct r4300_core* r4300)
 
     jump_end_rel8(r4300);
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     xor_reg8_imm8(gpr2, 2); // 4
     mov_reg32_preg64preg64(gpr1, gpr2, base1); // 3
 
@@ -710,7 +711,7 @@ void gen_LW(struct r4300_core* r4300)
     jne_rj(21);
 
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     mov_reg32_preg64preg64(gpr1, gpr2, base1); // 3
     jmp_imm_short(0); // 2
     jump_start_rel8(r4300);
@@ -779,7 +780,7 @@ void gen_LWU(struct r4300_core* r4300)
 
     jump_end_rel8(r4300);
     mov_reg64_imm64(base1, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(gpr2, 0x7FFFFF); // 6
+    and_reg32_imm32(gpr2, VADDR_MASK); // 6
     mov_reg32_preg64preg64(gpr1, gpr2, base1); // 3
 
     set_register_state(r4300, gpr1, (unsigned int*)r4300->recomp.dst->f.i.rt, 1, 1);
@@ -850,7 +851,7 @@ void gen_LD(struct r4300_core* r4300)
     jmp_imm_short(33); // 2
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_reg32_preg64preg64(EAX, RBX, RSI); // 3
     mov_reg32_preg64preg64pimm32(EBX, RBX, RSI, 4); // 7
     shl_reg64_imm8(RAX, 32); // 4
@@ -941,7 +942,7 @@ void gen_SB(struct r4300_core* r4300)
     /* else (RDRAM write), write byte */
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     xor_reg8_imm8(BL, 3); // 4
     mov_preg64preg64_reg8(RBX, RSI, DL); // 3
 
@@ -1030,7 +1031,7 @@ void gen_SH(struct r4300_core* r4300)
     /* else (RDRAM write), write hword */
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     xor_reg8_imm8(BL, 2); // 4
     mov_preg64preg64_reg16(RBX, RSI, DX); // 4
 
@@ -1114,7 +1115,7 @@ void gen_SW(struct r4300_core* r4300)
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_preg64preg64_reg32(RBX, RSI, ECX); // 3
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->cached_interp.invalid_code);
@@ -1206,7 +1207,7 @@ void gen_SD(struct r4300_core* r4300)
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_preg64preg64pimm32_reg32(RBX, RSI, 4, ECX); // 7
     mov_preg64preg64_reg32(RBX, RSI, EDX); // 3
 
@@ -4374,7 +4375,7 @@ void gen_LWC1(struct r4300_core* r4300)
     jmp_imm_short(28); // 2
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_reg32_preg64preg64(EAX, RBX, RSI); // 3
     mov_xreg64_m64rel(RBX, (unsigned long long *)(&(r4300_cp1_regs_simple(&r4300->cp1))[r4300->recomp.dst->f.lf.ft])); // 7
     mov_preg64_reg32(RBX, EAX); // 2
@@ -4428,7 +4429,7 @@ void gen_LDC1(struct r4300_core* r4300)
     jmp_imm_short(39); // 2
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_reg64_preg64preg64(RAX, RBX, RSI); // 4
     mov_xreg64_m64rel(RBX, (unsigned long long *)(&(r4300_cp1_regs_double(&r4300->cp1))[r4300->recomp.dst->f.lf.ft])); // 7
     mov_preg64pimm32_reg32(RBX, 4, EAX); // 6
@@ -4488,7 +4489,7 @@ void gen_SWC1(struct r4300_core* r4300)
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_preg64preg64_reg32(RBX, RSI, ECX); // 3
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->cached_interp.invalid_code);
@@ -4565,7 +4566,7 @@ void gen_SDC1(struct r4300_core* r4300)
 
     mov_reg64_imm64(RSI, (unsigned long long) r4300->rdram->dram); // 10
     mov_reg32_reg32(EAX, EBX); // 2
-    and_reg32_imm32(EBX, 0x7FFFFF); // 6
+    and_reg32_imm32(EBX, VADDR_MASK); // 6
     mov_preg64preg64pimm32_reg32(RBX, RSI, 4, ECX); // 7
     mov_preg64preg64_reg32(RBX, RSI, EDX); // 3
 

@@ -127,4 +127,9 @@ void dummyvideo_ResizeVideoOutput(int width, int height)
 {
 }
 
+void dummyvideo_AddHiresTexturePath(char* path) {
+}
+
+void dummyvideo_RemoveHiresTexturePath(char* path) {
+}
 

@@ -499,6 +499,7 @@ SOURCE = \
     $(SRCDIR)/api/config.c \
     $(SRCDIR)/api/debugger.c \
     $(SRCDIR)/api/frontend.c \
+    $(SRCDIR)/api/memaccess.c \
     $(SRCDIR)/api/vidext.c \
     $(SRCDIR)/backends/api/video_capture_backend.c \
     $(SRCDIR)/backends/plugins_compat/audio_plugin_compat.c \

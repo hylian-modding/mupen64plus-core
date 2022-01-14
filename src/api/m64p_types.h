@@ -361,7 +361,11 @@ typedef enum {
 
 #define M64P_MEM_INVALID        0xFFFFFFFF  /* invalid memory read will return this */
 
+#ifdef NOT_MODLOADER
 #define BREAKPOINTS_MAX_NUMBER  128
+#else
+#define BREAKPOINTS_MAX_NUMBER  0x40000 // important to have many more breakpoints when they are scriptable; though this may be too many
+#endif
 
 typedef enum {
   M64P_BKP_FLAG_ENABLED = 0x01,

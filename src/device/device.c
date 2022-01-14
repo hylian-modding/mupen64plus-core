@@ -135,7 +135,7 @@ void init_device(struct device* dev,
         /* clear mappings */
         { 0x00000000, 0xffffffff, M64P_MEM_NOTHING, { NULL, RW(open_bus) } },
         /* memory map */
-        { A(MM_RDRAM_DRAM, dram_size-1), M64P_MEM_RDRAM, { &dev->rdram, RW(rdram_dram) } },
+        { A(MM_RDRAM_DRAM, RDRAM_MAX_SIZE-1), M64P_MEM_RDRAM, { &dev->rdram, RW(rdram_dram) } },
         { A(MM_RDRAM_REGS, 0xfffff), M64P_MEM_RDRAMREG, { &dev->rdram, RW(rdram_regs) } },
         { A(MM_RSP_MEM, 0xffff), M64P_MEM_RSPMEM, { &dev->sp, RW(rsp_mem) } },
         { A(MM_RSP_REGS, 0xffff), M64P_MEM_RSPREG, { &dev->sp, RW(rsp_regs) } },
@@ -223,7 +223,9 @@ void poweron_device(struct device* dev)
 {
     size_t i;
 
+    dev->rdram.dram_size = RDRAM_MAX_SIZE;
     poweron_rdram(&dev->rdram);
+    dev->rdram.dram_size = RDRAM_8MB_SIZE; //@HACK: Predend that we have 8mb when in reality we have RDRAM_MAX_SIZE
     poweron_r4300(&dev->r4300);
     poweron_rdp(&dev->dp);
     poweron_rsp(&dev->sp);

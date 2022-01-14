@@ -250,7 +250,7 @@ static int savestates_load_m64p(struct device* dev, char *filepath)
     curr += 32;
 
     /* Read the rest of the savestate */
-    savestateSize = 16788244;
+    savestateSize = dev->rdram.dram_size;
     savestateData = curr = (unsigned char *)malloc(savestateSize);
     if (savestateData == NULL)
     {

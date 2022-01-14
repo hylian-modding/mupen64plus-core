@@ -35,6 +35,7 @@
 #endif
 #include "plugin/plugin.h"
 #include "api/callbacks.h"
+#include "api/fixups.h"
 
 static void do_sp_dma(struct rsp_core* sp, const struct sp_dma* dma)
 {
@@ -47,7 +48,7 @@ static void do_sp_dma(struct rsp_core* sp, const struct sp_dma* dma)
     unsigned int skip = ((l >> 20) & 0xfff);
 
     unsigned int memaddr = dma->memaddr & 0xff8;
-    unsigned int dramaddr = dma->dramaddr & 0xfffff8;
+    unsigned int dramaddr = dma->dramaddr & VADDR_MASK;
 
     unsigned char *spmem = (unsigned char*)sp->mem + (dma->memaddr & 0x1000);
     unsigned char *dram = (unsigned char*)sp->ri->rdram->dram;

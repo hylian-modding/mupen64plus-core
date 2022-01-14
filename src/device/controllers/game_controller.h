@@ -59,6 +59,8 @@ struct game_controller
 
     void* pak;
     const struct pak_interface* ipak;
+    uint32_t input;
+    uint32_t filter;
 };
 
 void init_game_controller(struct game_controller* cont,

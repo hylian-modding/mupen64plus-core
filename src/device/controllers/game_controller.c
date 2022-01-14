@@ -32,6 +32,37 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
+
+//@TODO: Cleanup this whole file
+
+typedef union {
+    unsigned int Value;
+    struct {
+        unsigned R_DPAD : 1;
+        unsigned L_DPAD : 1;
+        unsigned D_DPAD : 1;
+        unsigned U_DPAD : 1;
+        unsigned START_BUTTON : 1;
+        unsigned Z_TRIG : 1;
+        unsigned B_BUTTON : 1;
+        unsigned A_BUTTON : 1;
+        unsigned R_CBUTTON : 1;
+        unsigned L_CBUTTON : 1;
+        unsigned D_CBUTTON : 1;
+        unsigned U_CBUTTON : 1;
+        unsigned R_TRIG : 1;
+        unsigned L_TRIG : 1;
+        unsigned Reserved1 : 1;
+        unsigned Reserved2 : 1;
+        signed   X_AXIS : 8;
+        signed   Y_AXIS : 8;
+    };
+} BUTTONS;
+
+static int clamp_s32(int v, int lo, int hi) {
+    return (v < lo) ? lo : (hi < v) ? hi : v;
+}
 
 enum { PAK_CHUNK_SIZE = 0x20 };
 
@@ -87,6 +118,9 @@ void change_pak(struct game_controller* cont,
     /* set new pak */
     cont->pak = pak;
     cont->ipak = ipak;
+
+    cont->input = 0;
+    cont->filter = 0;
 }
 
 static uint8_t pak_data_crc(const uint8_t* data, size_t size)
@@ -184,14 +218,29 @@ static void process_controller_command(void* jbd,
     uint8_t* rx, uint8_t* rx_buf)
 {
     struct game_controller* cont = (struct game_controller*)jbd;
-    uint32_t input_ = 0;
+    BUTTONS input_, cont_input;
+    input_.Value = 0;
+    cont_input.Value = cont->input;
     uint8_t cmd = tx_buf[0];
 
     /* if controller can't successfully be polled, consider it to be absent */
-    if (cont->icin->get_input(cont->cin, &input_) != M64ERR_SUCCESS) {
+    if (cont->icin->get_input(cont->cin, &input_.Value) != M64ERR_SUCCESS) {
         *rx |= 0x80;
         return;
     }
+
+    int filter_x_axis = ((cont->filter >> 16) & 0xff) != 0;
+    int filter_y_axis = ((cont->filter >> 24) & 0xff) != 0;
+    input_.Value &= ~cont->filter;
+    if (filter_x_axis)
+        input_.X_AXIS = 0;
+    if (filter_y_axis)
+        input_.Y_AXIS = 0;
+    int x_axis = clamp_s32(input_.X_AXIS + cont_input.X_AXIS, SCHAR_MIN, SCHAR_MAX);
+    int y_axis = clamp_s32(input_.Y_AXIS + cont_input.Y_AXIS, SCHAR_MIN, SCHAR_MAX);
+    input_.Value |= cont->input;
+    input_.X_AXIS = x_axis;
+    input_.Y_AXIS = y_axis;
 
     switch (cmd)
     {
@@ -209,7 +258,7 @@ static void process_controller_command(void* jbd,
     case JCMD_CONTROLLER_READ: {
         JOYBUS_CHECK_COMMAND_FORMAT(1, 4)
 
-        *((uint32_t*)(rx_buf)) = input_;
+        *((uint32_t*)(rx_buf)) = input_.Value;
 #ifdef COMPARE_CORE
         CoreCompareDataSync(4, rx_buf);
 #endif

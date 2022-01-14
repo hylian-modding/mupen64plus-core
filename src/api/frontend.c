@@ -122,9 +122,11 @@ EXPORT m64p_error CALL CoreShutdown(void)
     workqueue_shutdown();
     savestates_deinit();
 
+#ifdef NOT_MODLOADER
     /* if the calling code is using SDL, don't shut it down */
     if (!l_CallerUsingSDL)
         SDL_Quit();
+#endif
 
     /* deallocate base memory */
     release_mem_base(g_mem_base);

@@ -1,2 +1,7 @@
 /projects/unix/_obj*/
 /projects/unix/libmupen64plus*.so*
+/projects/msvc/x64
+/projects/msvc/Win32
+/projects/msvc/*.user
+.vs
+.vscode

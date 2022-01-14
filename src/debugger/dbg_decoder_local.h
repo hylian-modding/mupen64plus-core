@@ -22,6 +22,7 @@
 #define __DECODER_LOCAL_H__
 
 #include <stdio.h>
+#include "api/fixups.h"
 
 /*	$NetBSD: cpuregs.h,v 1.77 2009/12/14 00:46:04 matt Exp $	*/
 
@@ -129,7 +130,7 @@
 
 /* Map virtual address to index in mips3 r4k virtually-indexed cache */
 #define	MIPS3_VA_TO_CINDEX(x) \
-		(((intptr_t)(x) & 0xffffff) | MIPS_KSEG0_START) 
+		(((intptr_t)(x) & VADDR_MASK) | MIPS_KSEG0_START) 
 
 #ifndef _LOCORE
 #define	MIPS_XSEG_MASK		(0x3fffffffffffffffLL)

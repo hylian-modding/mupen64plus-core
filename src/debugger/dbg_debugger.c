@@ -22,6 +22,7 @@
 
 #include <SDL.h>
 
+#include "api/m64p_ext.h"
 #include "api/callbacks.h"
 #include "api/debugger.h"
 #include "dbg_breakpoints.h"
@@ -71,6 +72,9 @@ void destroy_debugger()
 
 //]=-=-=-=-=-=-=-=-=-=-=-=-=[ Mise-a-Jour Debugger ]=-=-=-=-=-=-=-=-=-=-=-=-=[
 
+
+extern ExtCallback g_pause_cb;
+
 void update_debugger(uint32_t pc)
 // Update debugger state and display.
 // Should be called after each R4300 instruction
@@ -95,7 +99,14 @@ void update_debugger(uint32_t pc)
     }
     if (g_dbg_runstate == M64P_DBG_RUNSTATE_PAUSED) {
         // The emulation thread is blocked until a step call via the API.
+#ifdef NOT_MODLOADER
         SDL_SemWait(sem_pending_steps);
+#else
+        while (SDL_SemWaitTimeout(sem_pending_steps, 1) != 0) {
+            if (g_pause_cb)
+                g_pause_cb();
+        }
+#endif
     }
 
     previousPC = pc;
