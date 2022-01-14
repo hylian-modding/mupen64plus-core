@@ -8783,7 +8783,7 @@ int new_recompile_block(int addr)
   }
   else if ((int)addr >= 0x80000000 && (int)addr < (0x80000000 + RDRAM_MAX_SIZE)) {
     source = (u_int *)((uintptr_t)g_dev.rdram.dram+start-(uintptr_t)0x80000000);
-    pagelimit = 0x80800000;
+    pagelimit = 0x80000000 + RDRAM_MAX_SIZE;
   }
   else if ((signed int)addr >= (signed int)0xC0000000) {
     //DebugMessage(M64MSG_VERBOSE, "addr=%x mm=%x",(u_int)addr,(g_dev.r4300.new_dynarec_hot_state.memory_map[start>>12]<<2));
