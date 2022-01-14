@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include "osal/preproc.h"
+#include "device/memory/memory.h"
 #include "api/fixups.h"
 
 struct r4300_core;
